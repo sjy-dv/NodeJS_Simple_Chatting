@@ -14,10 +14,17 @@ class ChatLog extends React.Component {
   }
 
   async componentDidMount() {
-    console.log("1");
-    await socket.emit("intoroom", store.getState().roomname);
+    if (store.getState().mode === 1) {
+      await socket.emit("create_room", {
+        roomname: store.getState().roomname,
+        chat_id: store.getState().chat_id,
+      });
+    }
+    await socket.emit("intoroom", {
+      roomname: store.getState().roomname,
+      count: Number(store.getState().count) + 1,
+    });
     await socket.on("chatmsg", (obj) => {
-      console.log(obj);
       const logs2 = this.state.logs;
       obj.key = "key_" + (this.state.logs.length + 1);
       logs2.unshift(obj);
@@ -54,8 +61,8 @@ class ChatLog extends React.Component {
       console.log(obj.key);
       logs2.unshift(obj);
       this.setState({ logs: logs2 });
-      this.props.history.push("/room");
     });
+    this.props.history.push("/room");
   };
   render() {
     const messages = this.state.logs.map((k) => (

@@ -9,6 +9,7 @@
     "snowpack": "^3.0.1"
   },
   "dependencies": {
+    "antd": "^4.13.1",
     "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
     "react": "^17.0.1",

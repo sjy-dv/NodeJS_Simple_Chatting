@@ -22,6 +22,10 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const Router = require("./routes");
+
+app.use("/api/room", Router.room);
+
 const { PORT } = process.env;
 const http_server = require("http")
   .createServer(app)

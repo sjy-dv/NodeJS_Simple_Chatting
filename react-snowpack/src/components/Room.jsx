@@ -3,6 +3,8 @@ import axios from "axios";
 //import socketio from "socket.io-client";
 import store from "../store";
 import { withRouter } from "react-router-dom";
+import RoomList from "./RoomList";
+import { Modal } from "antd";
 //const socket = socketio.connect("http://localhost:8081/chat");
 
 class Room extends React.Component {
@@ -10,14 +12,16 @@ class Room extends React.Component {
     super(props);
     this.state = {
       RoomList: [],
+      isModalVisible: false,
+      r_name: "",
     };
   }
 
   getRoomList = async () => {
-    /*
     await axios
-      .get("http://localhost:8081/api/chat/roomlist")
+      .get("http://localhost:8081/api/room/roomlist")
       .then((res) => {
+        console.log(res.data);
         this.setState({
           RoomList: res.data,
         });
@@ -25,23 +29,39 @@ class Room extends React.Component {
       .catch((err) => {
         console.log(err);
       });
-      */
   };
 
-  chat_in = () => {
-    store.dispatch({
-      type: "intoroom",
-      chat_id: store.getState().chat_id,
-      roomname: "1",
+  create_room = async () => {
+    this.setState({
+      isModalVisible: true,
     });
-    this.props.history.push("/chat");
   };
-
-  create_room = async () => {};
 
   async componentDidMount() {
     await this.getRoomList();
   }
+
+  TextChange = (e) => {
+    let nextState = {};
+    nextState[e.target.name] = e.target.value;
+    this.setState(nextState);
+  };
+
+  handleOk = async () => {
+    store.dispatch({
+      type: "create",
+      chat_id: store.getState().chat_id,
+      roomname: this.state.r_name,
+      mode: 1,
+    });
+    this.props.history.push("/chat");
+  };
+
+  handleCancel = () => {
+    this.setState({
+      isModalVisible: false,
+    });
+  };
 
   render() {
     return (
@@ -58,38 +78,34 @@ class Room extends React.Component {
           <thead className="thead-dark">
             <th scope="col">채팅방 번호</th>
             <th scope="col">채팅방 이름</th>
+            <th scope="col">채팅방 인원</th>
             <th scope="col">입장하기</th>
           </thead>
-          <tbody>
-            <tr>
-              <td className="align-middle">1</td>
-              <td className="align-middle">테스트방</td>
-              <td className="align-middle">
-                <button className="btn btn-primary" onClick={this.chat_in}>
-                  입장하기
-                </button>
-              </td>
-            </tr>
-          </tbody>
           {this.state.RoomList
             ? this.state.RoomList.map((k) => (
-                <tbody>
-                  <tr>
-                    <td className="align-middle">{k.idx}</td>
-                    <td className="align-middle">{k.roomname}</td>
-                    <td className="align-middle">
-                      <button
-                        className="btn btn-primary"
-                        onClick={this.chat_in(k.idx)}
-                      >
-                        입장하기
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
+                <RoomList
+                  key={k.idx}
+                  idx={k.idx}
+                  chat_room={k.chat_room}
+                  chat_group_count={k.chat_group_count}
+                />
               ))
             : ""}
         </table>
+        <Modal
+          title="방 만들기"
+          visible={this.state.isModalVisible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+        >
+          <p>방이름을 입력해주세요.</p>
+          <input
+            type="text"
+            value={this.state.r_name}
+            name="r_name"
+            onChange={this.TextChange}
+          />
+        </Modal>
       </div>
     );
   }

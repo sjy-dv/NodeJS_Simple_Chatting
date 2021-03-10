@@ -24,6 +24,7 @@ const sequelize = new Sequelize(MYSQL_DB, MYSQL_DB_USER, MYSQL_DB_PASSWORD, {
 let db = [];
 
 db.chat_log = require("./chat_log.js")(sequelize, DataTypes);
+db.chat_room = require("./chat_room.js")(sequelize, DataTypes);
 
 db.sequelize = sequelize;
 db.Op = Op;
