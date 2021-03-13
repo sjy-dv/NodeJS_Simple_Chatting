@@ -9,6 +9,7 @@ class App extends React.Component {
         <Route exact path="/" component={Router.StartPage} />
         <Route path="/room" component={Router.Room} />
         <Route path="/chat" component={Router.ChatLog} />
+        <Route path="/chatlog" component={Router.Log} />
       </>
     );
   }

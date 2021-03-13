@@ -14,8 +14,11 @@ redis_client.on("error", (err) => {
 
 io.adapter(redisAdapter({ host: REDIS_HOST, port: REDIS_PORT }));
 let chat_socket = io.of("/chat");
+let online_socket = io.of("/room");
 module.exports = {
   io: io,
+  chat_socket: chat_socket,
+  online_socket: online_socket,
   redisSetValue: async (key, value) => {
     return new Promise((resolve, reject) => {
       redis_client.set(key, value, function (err, reply) {
@@ -38,7 +41,56 @@ module.exports = {
       });
     });
   },
-  init: async () => {
+  redisHmSetValue: async (key, value) => {
+    return new Promise((resolve, reject) => {
+      redis_client.hmset(key, value, function (err, reply) {
+        if (err) {
+          reject(err);
+        }
+        resolve(reply);
+      });
+    });
+  },
+  redisHgetAll: async (key) => {
+    return new Promise((resolve, reject) => {
+      redis_client.hgetall(key, value, function (err, reply) {
+        if (err) {
+          reject(err);
+        }
+        resolve(reply);
+      });
+    });
+  },
+  init: async (app) => {
+    online_socket.on("connection", (socket) => {
+      socket.on("online", async (chat_id) => {
+        try {
+          redis_client.get("online_group_list", async (err, reply) => {
+            if (err) console.log(err);
+            let obj = [reply];
+            obj.push(chat_id);
+            let online_group = await redis_client.set(
+              "online_group_list",
+              obj.toString()
+            );
+            if (!online_group) console.log("online_group_error");
+          });
+        } catch (error) {}
+      });
+      socket.on("online_user_list", async () => {
+        try {
+          redis_client.get("online_group_list", async (err, reply) => {
+            if (err) throw console.log(err);
+            console.log(reply);
+            let online_group_list = reply.split(",");
+            let online_group = online_group_list.filter((item) => {
+              return item !== null && item !== undefined && item !== "";
+            });
+            await online_socket.emit("online_user_list", online_group);
+          });
+        } catch (error) {}
+      });
+    });
     chat_socket.on("connection", (socket) => {
       socket.on("intoroom", async (roominfo) => {
         console.log(roominfo);
@@ -87,6 +139,7 @@ module.exports = {
 
       socket.on("disconnect", async () => {
         //접속 종료시 다른 소켓에세 퇴장했다는 응답을준다.
+        redis_client.flushall();
         try {
           await chat_room.destroy({
             where: {},

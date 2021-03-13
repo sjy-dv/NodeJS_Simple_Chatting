@@ -1,11 +1,11 @@
 import React from "react";
 import axios from "axios";
-//import socketio from "socket.io-client";
+import socketio from "socket.io-client";
 import store from "../store";
 import { withRouter } from "react-router-dom";
 import RoomList from "./RoomList";
 import { Modal } from "antd";
-//const socket = socketio.connect("http://localhost:8081/chat");
+const socket = socketio.connect("http://localhost:8081/room");
 
 class Room extends React.Component {
   constructor(props) {
@@ -14,6 +14,7 @@ class Room extends React.Component {
       RoomList: [],
       isModalVisible: false,
       r_name: "",
+      online_user: [],
     };
   }
 
@@ -38,6 +39,14 @@ class Room extends React.Component {
   };
 
   async componentDidMount() {
+    await socket.emit("online", store.getState().chat_id);
+    await socket.emit("online_user_list", {});
+    await socket.on("online_user_list", (obj) => {
+      this.setState({
+        online_user: obj,
+      });
+      console.log(this.state.online_user);
+    });
     await this.getRoomList();
   }
 
@@ -64,6 +73,9 @@ class Room extends React.Component {
   };
 
   render() {
+    let userobj = this.state.online_user;
+    let user_length = this.state.online_user.length;
+
     return (
       <div className="container">
         <br />
@@ -92,6 +104,17 @@ class Room extends React.Component {
               ))
             : ""}
         </table>
+        <div className="container">
+          <p>접속중인 유저 리스트</p>
+          {(function () {
+            let tagarray = [];
+            for (let i = 0; i < user_length; i++) {
+              let tag = <span>{userobj[i]}&nbsp;&nbsp;&nbsp;&nbsp;</span>;
+              tagarray.push(tag);
+            }
+            return tagarray;
+          })()}
+        </div>
         <Modal
           title="방 만들기"
           visible={this.state.isModalVisible}

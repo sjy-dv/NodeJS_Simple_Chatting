@@ -1,6 +1,6 @@
 import React from "react";
 import "./start.css";
-import { withRouter } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import store from "../store";
 
 class StartPage extends React.Component {
@@ -51,6 +51,7 @@ class StartPage extends React.Component {
               Enter to Room
             </p>
           </form>
+          <Link to="/chatlog">채팅로그확인</Link>
         </div>
       </>
     );

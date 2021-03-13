@@ -10,7 +10,8 @@ body {
 
 h1,
 p,
-td {
+td,
+span {
   color: white;
 }
 
