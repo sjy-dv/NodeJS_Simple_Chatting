@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Chat_Log = sequelize.define(
-    "chat_log",
+    'chat_log',
     {
       idx: {
         type: DataTypes.INTEGER,
@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       freezeTableName: true,
       timestamps: true,
-      comment: "chat_log table",
+      comment: 'chat_log table',
     }
   );
   return Chat_Log;

@@ -1,24 +1,25 @@
-let io = require("socket.io")();
+const io = require("socket.io")();
 const redisAdapter = require("socket.io-redis");
 const redis = require("redis");
 const dotenv = require("dotenv");
 const db = require("../models");
+
 dotenv.config();
-const chat_log = db.chat_log;
-const chat_room = db.chat_room;
+const { chat_log } = db;
+const { chat_room } = db;
 const { REDIS_HOST, REDIS_PORT } = process.env;
 const redis_client = redis.createClient(REDIS_PORT, REDIS_HOST);
 redis_client.on("error", (err) => {
-  console.log("Redis Error" + err);
+  console.log(`Redis Error${err}`);
 });
 
 io.adapter(redisAdapter({ host: REDIS_HOST, port: REDIS_PORT }));
-let chat_socket = io.of("/chat");
-let online_socket = io.of("/room");
+const chat_socket = io.of("/chat");
+const online_socket = io.of("/room");
 module.exports = {
-  io: io,
-  chat_socket: chat_socket,
-  online_socket: online_socket,
+  io,
+  chat_socket,
+  online_socket,
   redisSetValue: async (key, value) => {
     return new Promise((resolve, reject) => {
       redis_client.set(key, value, function (err, reply) {
@@ -41,35 +42,15 @@ module.exports = {
       });
     });
   },
-  redisHmSetValue: async (key, value) => {
-    return new Promise((resolve, reject) => {
-      redis_client.hmset(key, value, function (err, reply) {
-        if (err) {
-          reject(err);
-        }
-        resolve(reply);
-      });
-    });
-  },
-  redisHgetAll: async (key) => {
-    return new Promise((resolve, reject) => {
-      redis_client.hgetall(key, value, function (err, reply) {
-        if (err) {
-          reject(err);
-        }
-        resolve(reply);
-      });
-    });
-  },
   init: async (app) => {
     online_socket.on("connection", (socket) => {
       socket.on("online", async (chat_id) => {
         try {
           redis_client.get("online_group_list", async (err, reply) => {
             if (err) console.log(err);
-            let obj = [reply];
+            const obj = [reply];
             obj.push(chat_id);
-            let online_group = await redis_client.set(
+            const online_group = await redis_client.set(
               "online_group_list",
               obj.toString()
             );
@@ -82,12 +63,13 @@ module.exports = {
           redis_client.get("online_group_list", async (err, reply) => {
             if (err) throw console.log(err);
             console.log(reply);
-            let online_group_list = reply.split(",");
-            let online_group = online_group_list.filter((item) => {
+            const online_group_list = reply.split(",");
+            const online_group = online_group_list.filter((item) => {
               return item !== null && item !== undefined && item !== "";
             });
             await online_socket.emit("online_user_list", online_group);
           });
+          // eslint-disable-next-line no-empty
         } catch (error) {}
       });
     });
@@ -138,7 +120,7 @@ module.exports = {
       });
 
       socket.on("disconnect", async () => {
-        //접속 종료시 다른 소켓에세 퇴장했다는 응답을준다.
+        // 접속 종료시 다른 소켓에세 퇴장했다는 응답을준다.
         redis_client.flushall();
         try {
           await chat_room.destroy({

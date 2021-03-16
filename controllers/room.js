@@ -1,4 +1,4 @@
-const db = require("../models");
+const db = require('../models');
 const chat_room = db.chat_room;
 const chat_log = db.chat_log;
 module.exports = {

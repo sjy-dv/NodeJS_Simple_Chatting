@@ -1,5 +1,8 @@
-const { Sequelize, DataTypes, Op, QueryTypes } = require("sequelize");
-const dotenv = require("dotenv");
+const { Sequelize, DataTypes, Op, QueryTypes } = require('sequelize');
+const fs = require('fs');
+const path = require('path');
+const basename = path.basename(__filename);
+const dotenv = require('dotenv');
 dotenv.config();
 
 const {
@@ -11,7 +14,7 @@ const {
 
 const sequelize = new Sequelize(MYSQL_DB, MYSQL_DB_USER, MYSQL_DB_PASSWORD, {
   host: MYSQL_DB_HOST,
-  dialect: "mysql",
+  dialect: 'mysql',
   operatorsAliases: 0,
 
   pool: {
@@ -23,8 +26,22 @@ const sequelize = new Sequelize(MYSQL_DB, MYSQL_DB_USER, MYSQL_DB_PASSWORD, {
 
 let db = [];
 
-db.chat_log = require("./chat_log.js")(sequelize, DataTypes);
-db.chat_room = require("./chat_room.js")(sequelize, DataTypes);
+fs.readdirSync(__dirname)
+  .filter((file) => {
+    return (
+      file.indexOf('.') !== 0 && file !== basename && file.slice(-3) === '.js'
+    );
+  })
+  .forEach((file) => {
+    const model = require(path.join(__dirname, file))(sequelize, DataTypes);
+    db[model.name] = model;
+  });
+
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
 db.sequelize = sequelize;
 db.Op = Op;

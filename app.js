@@ -2,9 +2,13 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const compression = require("compression");
-const socket_server = require("./services/socket");
 const dotenv = require("dotenv");
+const http_server = require("http")
+  .createServer(app)
+  .listen(PORT || 8081);
+const socket_server = require("./services/socket");
 const db = require("./models");
+
 dotenv.config();
 
 db.sequelize
@@ -27,9 +31,6 @@ const Router = require("./routes");
 app.use("/api/room", Router.room);
 
 const { PORT } = process.env;
-const http_server = require("http")
-  .createServer(app)
-  .listen(PORT || 8081);
 
 socket_server.io.attach(http_server, {
   cors: {
