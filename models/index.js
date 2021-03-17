@@ -1,8 +1,8 @@
-const { Sequelize, DataTypes, Op, QueryTypes } = require('sequelize');
-const fs = require('fs');
-const path = require('path');
+const { Sequelize, DataTypes, Op, QueryTypes } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 const basename = path.basename(__filename);
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 dotenv.config();
 
 const {
@@ -14,7 +14,7 @@ const {
 
 const sequelize = new Sequelize(MYSQL_DB, MYSQL_DB_USER, MYSQL_DB_PASSWORD, {
   host: MYSQL_DB_HOST,
-  dialect: 'mysql',
+  dialect: "mysql",
   operatorsAliases: 0,
 
   pool: {
@@ -29,7 +29,7 @@ let db = [];
 fs.readdirSync(__dirname)
   .filter((file) => {
     return (
-      file.indexOf('.') !== 0 && file !== basename && file.slice(-3) === '.js'
+      file.indexOf(".") !== 0 && file !== basename && file.slice(-3) === ".js"
     );
   })
   .forEach((file) => {

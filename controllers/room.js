@@ -1,6 +1,4 @@
-const db = require('../models');
-const chat_room = db.chat_room;
-const chat_log = db.chat_log;
+const { chat_room, chat_log } = require("../models");
 module.exports = {
   RoomList: async (req, res) => {
     try {

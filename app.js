@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const compression = require("compression");
 const dotenv = require("dotenv");
+const { PORT } = process.env;
 const http_server = require("http")
   .createServer(app)
   .listen(PORT || 8081);
@@ -29,8 +30,6 @@ app.use(express.urlencoded({ extended: false }));
 const Router = require("./routes");
 
 app.use("/api/room", Router.room);
-
-const { PORT } = process.env;
 
 socket_server.io.attach(http_server, {
   cors: {

@@ -10,6 +10,7 @@ class ChatLog extends React.Component {
     this.state = {
       logs: [],
       chatmsg: "",
+      room_user : []
     };
   }
 
@@ -22,7 +23,25 @@ class ChatLog extends React.Component {
     }
     await socket.emit("intoroom", {
       roomname: store.getState().roomname,
+      chat_id : store.getState().chat_id,
       count: Number(store.getState().count) + 1,
+    });
+    await socket.on("server_msg", async (obj) => {
+      console.log(obj);
+      console.log(this.state.logs);
+      const logs2 = this.state.logs;
+      console.log(logs2);
+      obj.key = "key_" + (this.state.logs.length + 1);
+      console.log(obj.key);
+      logs2.unshift(obj);
+      this.setState({ logs: logs2 });
+    });
+    await socket.emit("chat_room_list", store.getState().roomname);
+    await socket.on("chat_room_list", (obj) => {
+      this.setState({
+        room_user : obj,
+      });
+      console.log(this.state.room_user);
     });
     await socket.on("chatmsg", (obj) => {
       const logs2 = this.state.logs;
@@ -65,6 +84,8 @@ class ChatLog extends React.Component {
     this.props.history.push("/room");
   };
   render() {
+    let userobj = this.state.room_user;
+    let user_length = this.state.room_user.length;
     const messages = this.state.logs.map((k) => (
       <div key={k.key}>
         <p>
@@ -97,6 +118,17 @@ class ChatLog extends React.Component {
           <button className="btn btn-warning" onClick={this.leave}>
             방나가기
           </button>
+          <div className="container">
+          <p>참여중인 유저 리스트</p>
+          {(function () {
+            let tagarray = [];
+            for (let i = 0; i < user_length; i++) {
+              let tag = <span>{userobj[i]}&nbsp;&nbsp;&nbsp;&nbsp;</span>;
+              tagarray.push(tag);
+            }
+            return tagarray;
+          })()}
+        </div>
         </div>
       </>
     );

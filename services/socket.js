@@ -2,11 +2,10 @@ const io = require("socket.io")();
 const redisAdapter = require("socket.io-redis");
 const redis = require("redis");
 const dotenv = require("dotenv");
-const db = require("../models");
+const { chat_room, chat_log } = require("../models");
+const { on } = require("nodemon");
 
 dotenv.config();
-const { chat_log } = db;
-const { chat_room } = db;
 const { REDIS_HOST, REDIS_PORT } = process.env;
 const redis_client = redis.createClient(REDIS_PORT, REDIS_HOST);
 redis_client.on("error", (err) => {
@@ -46,7 +45,7 @@ module.exports = {
     online_socket.on("connection", (socket) => {
       socket.on("online", async (chat_id) => {
         try {
-          redis_client.get("online_group_list", async (err, reply) => {
+          await redis_client.get("online_group_list", async (err, reply) => {
             if (err) console.log(err);
             const obj = [reply];
             obj.push(chat_id);
@@ -56,11 +55,11 @@ module.exports = {
             );
             if (!online_group) console.log("online_group_error");
           });
-        } catch (error) {}
+        } catch (e) {}
       });
       socket.on("online_user_list", async () => {
         try {
-          redis_client.get("online_group_list", async (err, reply) => {
+          await redis_client.get("online_group_list", async (err, reply) => {
             if (err) throw console.log(err);
             console.log(reply);
             const online_group_list = reply.split(",");
@@ -70,59 +69,91 @@ module.exports = {
             await online_socket.emit("online_user_list", online_group);
           });
           // eslint-disable-next-line no-empty
-        } catch (error) {}
+        } catch (e) {}
       });
     });
     chat_socket.on("connection", (socket) => {
       socket.on("intoroom", async (roominfo) => {
-        console.log(roominfo);
-        const update_room = await chat_room.update(
-          { count: roominfo.count + 1 },
-          {
-            where: {
-              chat_room: roominfo.roomname,
-            },
-          }
-        );
-        if (!update_room) console.log("update error");
-        await socket.join(roominfo.roomname);
-        await socket.broadcast.to(roominfo.roomname).emit("server_msg", {
-          chat_id: "[서버]",
-          message: `${roominfo.chat_id}님이 들어왔습니다. 환영해주세요~ ^^`,
-        });
+        try {
+          var count = 0;
+          await redis_client.get("chat_room_list", async (err, reply) => {
+            if (err) throw console.log(err);
+            const before_redis = reply.split(",");
+            before_redis.push(roominfo.chat_id);
+            count = before_redis.length - 1;
+            console.log(count);
+            await redis_client.set("chat_room_list", before_redis.toString());
+          });
+          const update_room = await chat_room.update(
+            { count: count },
+            {
+              where: {
+                chat_room: roominfo.roomname,
+              },
+            }
+          );
+          if (!update_room) console.log("update error");
+          await socket.join(roominfo.roomname);
+          await socket.to(roominfo.roomname).emit("server_msg", {
+            chat_id: "[서버]",
+            message: `${roominfo.chat_id}님이 들어왔습니다. 환영해주세요~ ^^`,
+          });
+        } catch (e) {}
       });
       socket.on("create_room", async (roominfo) => {
-        const create_room = await chat_room.create({
-          chat_room: roominfo.roomname,
-          chat_group_member: roominfo.chat_id,
-          chat_group_count: 1,
-        });
-        if (!create_room) console.log("create error");
-        await socket.join(roominfo.roomname);
+        try {
+          await redis_client.set(
+            `${roominfo.roomname}_room_list`,
+            roominfo.chat_id
+          );
+          const create_room = await chat_room.create({
+            chat_room: roominfo.roomname,
+            chat_group_member: roominfo.chat_id,
+            chat_group_count: 1,
+          });
+          if (!create_room) console.log("create error");
+          await socket.join(roominfo.roomname);
+        } catch (e) {}
       });
       socket.on("chatmsg", async (chatmsg) => {
-        const write_chat_log = await chat_log.create({
-          chat_room: chatmsg.roomname,
-          chat_id: chatmsg.chat_id,
-          chat_msg: chatmsg.message,
-        });
-        if (!write_chat_log) console.log("db error");
-        await chat_socket.to(chatmsg.roomname).emit("chatmsg", chatmsg);
+        try {
+          const write_chat_log = await chat_log.create({
+            chat_room: chatmsg.roomname,
+            chat_id: chatmsg.chat_id,
+            chat_msg: chatmsg.message,
+          });
+          if (!write_chat_log) console.log("db error");
+          await chat_socket.to(chatmsg.roomname).emit("chatmsg", chatmsg);
+        } catch (e) {}
       });
-
+      socket.on("chat_room_list", async (roomname) => {
+        try {
+          redis_client.get(`${roomname}_room_list`, async (err, reply) => {
+            if (err) throw console.log(err);
+            console.log(reply);
+            const chat_room_list = reply.split(",");
+            const chat_room_group = chat_room_list.filter((item) => {
+              return item !== null && item !== undefined && item !== "";
+            });
+            await chat_socket.emit("chat_room_list", chat_room_group);
+          });
+        } catch (e) {}
+      });
       socket.on("leaveroom", async (userinfo) => {
-        console.log("방 나가기");
-        await socket.broadcast.to(userinfo.roomname).emit("leavemsg", {
-          chat_id: "[서버]",
-          message: `${userinfo.chat_id}님이 방을 나갔습니다.`,
-        });
-        await socket.leave(userinfo.roomname);
+        try {
+          console.log("방 나가기");
+          await socket.broadcast.to(userinfo.roomname).emit("leavemsg", {
+            chat_id: "[서버]",
+            message: `${userinfo.chat_id}님이 방을 나갔습니다.`,
+          });
+          await socket.leave(userinfo.roomname);
+        } catch (e) {}
       });
 
       socket.on("disconnect", async () => {
         // 접속 종료시 다른 소켓에세 퇴장했다는 응답을준다.
-        redis_client.flushall();
         try {
+          redis_client.flushall();
           await chat_room.destroy({
             where: {},
           });

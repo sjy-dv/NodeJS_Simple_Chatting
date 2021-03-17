@@ -1,4 +1,4 @@
-const RoomList = require('./room');
+const RoomList = require("./room");
 
 module.exports = {
   RoomList,

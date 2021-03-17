@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Chat_Room = sequelize.define(
-    'chat_room',
+    "chat_room",
     {
       idx: {
         type: DataTypes.INTEGER,
@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       freezeTableName: true,
       timestamps: true,
-      comment: 'chat_room table',
+      comment: "chat_room table",
     }
   );
   return Chat_Room;
