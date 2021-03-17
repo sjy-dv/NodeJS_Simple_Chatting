@@ -76,14 +76,20 @@ module.exports = {
       socket.on("intoroom", async (roominfo) => {
         try {
           var count = 0;
-          await redis_client.get("chat_room_list", async (err, reply) => {
-            if (err) throw console.log(err);
-            const before_redis = reply.split(",");
-            before_redis.push(roominfo.chat_id);
-            count = before_redis.length - 1;
-            console.log(count);
-            await redis_client.set("chat_room_list", before_redis.toString());
-          });
+          await redis_client.get(
+            `${roominfo.roomname}_room_list`,
+            async (err, reply) => {
+              if (err) throw console.log(err);
+              const before_redis = reply.split(",");
+              before_redis.push(roominfo.chat_id);
+              count = before_redis.length - 1;
+              console.log(count);
+              await redis_client.set(
+                `${roominfo.roomname}_room_list`,
+                before_redis.toString()
+              );
+            }
+          );
           const update_room = await chat_room.update(
             { count: count },
             {
