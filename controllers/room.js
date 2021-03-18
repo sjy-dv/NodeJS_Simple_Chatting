@@ -19,6 +19,7 @@ module.exports = {
       const result = await chat_log.findAndCountAll({
         offset: offset,
         limit: 10,
+        order: [["idx", "DESC"]],
       });
       console.log(result.count);
       return res.status(200).send(result);
